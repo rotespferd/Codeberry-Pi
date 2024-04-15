@@ -1,0 +1,4 @@
+user: myuser
+user_ssh_pubkey_path: /path/to/ssh/id_rsa.pub
+user_use_ohmyzsh: true
+user_use_powerlevel10k: true

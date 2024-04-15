@@ -1,0 +1,15 @@
+- name: Install and activate Cockpit
+  hosts: rocky
+  become: yes
+
+  tasks:
+    - name: Install cockpit package
+      yum:
+        name: cockpit
+        state: present
+
+    - name: Enable cockpit service
+      systemd:
+        name: cockpit.socket
+        state: started
+        enabled: yes

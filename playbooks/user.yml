@@ -1,0 +1,51 @@
+---
+- name: Create and configure a new user
+  hosts: dev
+  become: yes
+  vars_files:
+    - ../vars/user.yml
+  tasks:
+    - name: Create user
+      user:
+        name: "{{ user }}"
+        shell: /bin/zsh
+        create_home: yes
+
+    - name: Add authorized key
+      authorized_key:
+        user: "{{ user }}"
+        key: "{{ lookup('file', user_ssh_pubkey_path) }}"
+        state: present
+    
+    # Install Oh-My-ZSH
+    - block:
+        - name: Clone Oh-My-Zsh repository
+          git:
+            repo: https://github.com/ohmyzsh/ohmyzsh.git
+            dest: ~/.oh-my-zsh
+            depth: 1
+
+        - name: Copy Oh-My-Zsh configuration file
+          copy:
+            src: ../templates/zshrc
+            dest: ~/.zshrc
+
+        - name: Change the ownership of Oh-My-Zsh directory
+          command: chown -R {{ user }}:{{ user }} ~/.oh-my-zsh
+      when: user_use_ohmyzsh == True
+      become_user: "{{ user }}"
+
+    # Install Powerlevel10k
+    - block:
+        - name: Clone Powerlevel10k repository
+          git:
+            repo: https://github.com/romkatv/powerlevel10k.git
+            dest: ~/.oh-my-zsh/custom/themes/powerlevel10k
+            depth: 1
+        
+        - name: Copy Powerlevel10k configuration file
+          copy:
+            src: ../templates/p10k.zsh
+            dest: ~/.p10k.zsh
+      when: user_use_ohmyzsh == True and user_use_powerlevel10k == True
+      become_user: "{{ user }}"
