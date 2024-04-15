@@ -1,0 +1,9 @@
+[dev]
+1.2.3.4
+
+[pi]
+1.2.3.4
+
+[dev:vars]
+ansible_user=dev
+ansible_ssh_private_key_file=/dev/null
