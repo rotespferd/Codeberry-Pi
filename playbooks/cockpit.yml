@@ -1,10 +1,10 @@
 - name: Install and activate Cockpit
-  hosts: rocky
+  hosts: pi
   become: yes
 
   tasks:
     - name: Install cockpit package
-      yum:
+      apt:
         name: cockpit
         state: present
 
