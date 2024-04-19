@@ -1,0 +1,64 @@
+---
+- name: Install Docker on Raspberry Pi
+  hosts: dev
+  become: yes
+
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        update_cache: yes
+        upgrade: yes
+
+    - name: Install required system packages
+      apt:
+        name: "{{ packages }}"
+      vars:
+        packages:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - gnupg2
+
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/raspbian/gpg
+        state: present
+
+    - name: Get the architecture of the system
+      command: dpkg --print-architecture
+      register: architecture
+
+    - name: Get the Debian version codename
+      shell: . /etc/os-release && echo "{{ ansible_lsb.codename }}"
+      register: version_codename
+
+    - name: Download Docker GPG key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/debian/gpg
+        dest: /etc/apt/keyrings/docker.asc
+        mode: '0644'
+
+    - name: Add Docker APT repository
+      apt_repository:
+        repo: "deb [arch={{ architecture.stdout }} signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian {{ version_codename.stdout }} stable"
+        state: present
+        filename: docker-ce
+
+    - name: Install Docker
+      apt:
+        name: "{{ packages }}"
+        state: latest
+      vars:
+        packages:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+
+    - name: Ensure Docker service is running
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
