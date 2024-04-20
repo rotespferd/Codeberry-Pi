@@ -1,0 +1,24 @@
+---
+- name: Configure local Docker to access Docker on Raspberry Pi via Tailscale
+  hosts: localhost
+  connection: local
+  gather_facts: no
+  vars:
+    tailscale_command: /Applications/Tailscale.app/Contents/MacOS/Tailscale
+
+  tasks:
+    - name: Retrieve Tailscale IP for Raspberry Pi
+      command: "{{ tailscale_command }} ip -4 fluffy"
+      register: tailscale_ip
+      changed_when: false
+
+    - name: Set environment variable for Docker host
+      ansible.builtin.lineinfile:
+        path: ~/.zshrc
+        line: 'export DOCKER_HOST="tcp://{{ tailscale_ip.stdout }}:2375"'
+        create: yes
+        state: present
+
+    - name: Inform user to reload their zshrc
+      debug:
+        msg: "Please run 'source ~/.zshrc' to reload the environment variables."
