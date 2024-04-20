@@ -1,0 +1,39 @@
+---
+- name: Configure Docker to be accessible over Tailscale IP without TLS
+  hosts: dev
+  become: yes
+  tasks:
+    - name: Determine Tailscale IP
+      command: tailscale ip -4
+      register: tailscale_ip
+      changed_when: false
+
+    - name: Install Docker prerequisites
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+        state: present
+        update_cache: yes
+
+    - name: Modify Docker service file to enable remote access via Tailscale IP
+      ansible.builtin.lineinfile:
+        path: /lib/systemd/system/docker.service
+        regexp: '^ExecStart=/usr/bin/dockerd'
+        line: "ExecStart=/usr/bin/dockerd -H tcp://{{ tailscale_ip.stdout }}:2375 -H fd:// --containerd=/run/containerd/containerd.sock"
+        backrefs: yes
+
+    - name: Reload systemd and restart Docker service
+      ansible.builtin.systemd:
+        daemon_reload: yes
+        state: restarted
+        enabled: yes
+        name: docker
+
+    - name: Ensure the Docker service is running
+      systemd:
+        name: docker
+        state: started
