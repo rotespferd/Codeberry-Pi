@@ -1,0 +1,32 @@
+---
+- name: Install and configure Tailscale on Raspberry Pi
+  hosts: dev
+  become: yes
+  vars_files:
+    - ../vars/tailscale.yml
+
+  tasks:
+    - name: Import Tailscale's GPG key
+      ansible.builtin.apt_key:
+        url: https://pkgs.tailscale.com/stable/raspbian/buster.gpg
+        state: present
+
+    - name: Add Tailscale's repository
+      ansible.builtin.apt_repository:
+        repo: "deb https://pkgs.tailscale.com/stable/raspbian buster main"
+        state: present
+
+    - name: Install Tailscale
+      apt:
+        name: tailscale
+        state: latest
+        update_cache: yes
+
+    - name: Start and enable Tailscale service
+      ansible.builtin.systemd:
+        name: tailscaled
+        enabled: yes
+        state: started
+
+    - name: Authenticate and connect to Tailscale
+      command: tailscale up --authkey {{ tailscale_auth_key }}
